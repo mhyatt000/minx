@@ -1,0 +1,18 @@
+[project]
+name = "minx"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "big-vision",
+    "flax>=0.10.4",
+    "jax[cuda12]>=0.4.30",
+    "jaxtyping>=0.3.0",
+    "tensorflow>=2.15.0,<2.18.0",
+    "tensorflow_datasets==4.9.2",
+    "tqdm>=4.67.1",
+]
+
+[tool.uv.sources]
+big-vision = { path = "../big_vision/big_vision" }
