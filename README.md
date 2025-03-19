@@ -1,0 +1,2 @@
+# minx
+multinode training jax
