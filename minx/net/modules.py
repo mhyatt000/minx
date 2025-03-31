@@ -24,7 +24,7 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 from flax import nnx
-from jaxtyping import (  Array, ArrayLike)
+from jaxtyping import Array, ArrayLike
 from minx.net import layers, positional_embeddings, sow_lib
 
 LayerCache = dict[str, Array]

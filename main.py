@@ -1,4 +1,5 @@
 import os
+import time
 from tqdm import tqdm
 from functools import partial
 from typing import *
@@ -9,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 import tensorflow as tf
+
 # from big_vision import sharding
 # from big_vision.pp import utils
 from flax import linen as nn
@@ -23,6 +25,14 @@ from minx import comm
 from minx.net import modules
 from minx.net.modules import FeedForward
 
+from minx.comm import dist_print as print
+
+
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]:
+    os.environ.pop(var, None)
+
+os.environ["NCCL_SOCKET_IFNAME"] = "hsn"
+
 
 def show_shardings(shards: dict[str, NamedSharding]):
     for k, shard in shards.items():
@@ -35,6 +45,9 @@ def show_shardings(shards: dict[str, NamedSharding]):
 
 
 def tmp2():
+
+    print(jax.devices())
+    print(type(jax.devices()))
 
     mesh = Mesh(
         devices=np.array(jax.devices()).reshape(-1, 1),
@@ -106,8 +119,11 @@ def tmp2():
     nsteps = int(1e1)
     with mesh:
         for _ in tqdm(range(nsteps)):
+            tic = time.time()
             loss = train_step(model, optimizer, x, y)
             print(loss)
+            toc = time.time()
+            print(tic-toc)
 
 
 def tmp():
@@ -122,7 +138,7 @@ def tmp():
     d = tf.data.Dataset.range(16).repeat(int(1e3))
     d = d.map(lambda _: tf.random.uniform([], minval=0, maxval=1))  # rand
     d = d.batch(16).batch(globalbatch, drop_remainder=True)
-    d = d.shard(2, comm.id)
+    d = d.shard(2, jax.process_index())
 
     # make it a jnp then shard
     d = map(
@@ -133,10 +149,14 @@ def tmp():
 
     # print(next(d))
 
+
 def main():
 
     comm.init()
     print("initialized!")
+
+    # mx.sync_global_devices()
+
     comm.show()
 
     tmp2()
@@ -151,6 +171,7 @@ def main():
     )
     print('done')
     """
+
 
 if __name__ == "__main__":
     main()

@@ -1,15 +1,31 @@
 import os
+import sys
+
+import builtins
+import jax
+
+import time
 
 import jax
 import jax.distributed
 import jax.numpy as jnp
 
 
-_id = int(os.uname()[1][-1]) - 1
-id = int(os.environ.get("SLURM_PROCID", _id))
+# _id = int(os.uname()[1][-1]) - 1
+# id = int(os.environ.get("SLURM_PROCID", _id))
 
 # rank = jax.process_index()
 # size = jax.process_count()
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+world = int(comm.Get_size())
+rank = int(comm.Get_rank())
+
+lrank = os.environ.get("OMPI_COMM_WORLD_LOCAL_RANK")
+lworld = os.environ.get("OMPI_COMM_WORLD_LOCAL_SIZE")
 
 
 def init():
@@ -33,19 +49,50 @@ def init():
         master = nodelist[0]
         nprocs = len(nodelist)
 
+    nodefile = os.environ.get("PBS_NODEFILE")
+    with open(nodefile, "r") as file:
+        nodes = [x.strip() for x in file.readlines() if x]
+
+    id = int([x.split(".")[0] for x in nodes].index(os.uname()[1]))
+
+
+    wait = (len(nodes) - id) / len(nodes)
+    time.sleep(wait)
+
     jax.distributed.initialize(
-        coordinator_address=f"{master}:1234",
-        num_processes=nprocs,
-        process_id=id,
+        coordinator_address=f"{nodes[0]}:29500",
+        num_processes=world,  # len(nodes),
+        process_id=rank,  # id,
     )
+
+    # jax.distributed.initialize(
+    # coordinator_address=f"{master}:29500",
+    # num_processes=nprocs,
+    # process_id=id,
+    # )
+
+    if jax.process_index() != 0:
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
+        # Optionally suppress Python warnings
+        import warnings
+        warnings.filterwarnings("ignore")
+
+    print = dist_print
+
+    print(f"Hello from process {rank}")
+    print(rank, world, lrank, lworld)
+    print(nodes)
+    print({"id": id, "master": nodes[0], "nodes": len(nodes), "world": world})
+
+
+
+def dist_print(*args, **kwargs):
+    if jax.process_index() == 0:
+        builtins.print(*args, **kwargs)
 
 
 def show():
-
-    # Each node will create an array of ones with size == number of local GPUs
-    xs = jax.numpy.ones(jax.local_device_count())
-    # The psum is performed over all mapped GPU devices across the cluster
-    y = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(xs)
 
     print(jax.process_index())
 
@@ -57,4 +104,3 @@ def show():
             f"\nLocal device count: {jax.local_device_count()}\n"
             f"\nInput: {xs}\nOutput: {y}\n"
         )
-
