@@ -27,7 +27,6 @@ rank = int(comm.Get_rank())
 lrank = os.environ.get("OMPI_COMM_WORLD_LOCAL_RANK")
 lworld = os.environ.get("OMPI_COMM_WORLD_LOCAL_SIZE")
 
-
 def init():
 
     if "SLURM_PROCID" in os.environ:

@@ -108,7 +108,7 @@ def tmp2():
 
         return loss
 
-    bs = 32
+    bs = 4096
     todp = lambda _x: jax.device_put(_x, shards["dp"])
     x = todp(jax.random.normal(jax.random.key(1), (bs, 1024)))
     y = todp(jax.random.normal(jax.random.key(2), (bs, 1024)))
@@ -123,7 +123,7 @@ def tmp2():
             loss = train_step(model, optimizer, x, y)
             print(loss)
             toc = time.time()
-            print(tic-toc)
+            print(f'time: {round(tic-toc,2)})
 
 
 def tmp():

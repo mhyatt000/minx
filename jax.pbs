@@ -1,3 +1,15 @@
+#PBS -l select=1:system=polaris
+#PBS -l place=scatter
+#PBS -l walltime=0:05:00
+#PBS -l filesystems=home:grand
+#PBS -j oe
+#PBS -q debug
+#PBS -A EVITA
+
+# Change to working directory
+cd ${PBS_O_WORKDIR}
+echo ${PBS_O_WORKDIR}
+
 # Enable GPU-MPI (if supported by application)
 export MPICH_GPU_SUPPORT_ENABLED=1
 
@@ -75,25 +87,4 @@ source .venv/bin/activate
 # For applications that internally handle binding MPI/OpenMP processes to GPUs
 # mpiexec -n ${NRANKS} --npernode ${NRANKS_PER_NODE} \
 mpiexec -n ${NRANKS} --ppn ${NRANKS_PER_NODE} \
-    ~/affinity_soph.sh python main.py
-# ~/affinity_soph.sh python mvp.py
-
-#
-# sandbox
-#
-
-# ./run  
-
-# ./unset_proxy_jax.sh  <args>
-
-# mpiexec -np $NTORANKS --hostfile $PBS_NODEFILE  uv run main.py
-# --envlist JAX_NUM_PROCESSES,JAX_COORDINATION_SERVICE_ADDR \
-# --bind-to none \
-
-# --envlist JAX_NUM_PROCESSES,JAX_COORDINATION_SERVICE_ADDR \
-# --bind-to none \
-
-
-
-# For applications that need mpiexec to bind MPI ranks to GPUs
-#mpiexec -n ${NRANKS} --ppn ${NRANKS_PER_NODE} --depth=${NDEPTH} --cpu-bind depth --env OMP_NUM_THREADS=${NTHREADS} -env OMP_PLACES=threads ./set_affinity_gpu_polaris.sh ./hello_affinity
+    ./affinity.sh python main.py
